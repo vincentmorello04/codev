@@ -17,6 +17,8 @@ class ActivityIndicator implements IndicatorPlugin {
     */
    private static $logger;
 
+   private $uniqueKey;
+
    private $startTimestamp;
    private $endTimestamp;
    private $teamid;
@@ -54,40 +56,46 @@ class ActivityIndicator implements IndicatorPlugin {
 
 
    private function checkParams(IssueSelection $inputIssueSel, array $params = NULL) {
-      if (NULL == $inputIssueSel) {
+      if (is_null($inputIssueSel)) {
          throw new Exception("Missing IssueSelection");
       }
-      if (NULL == $params) {
+      if (is_null($params)) {
          throw new Exception("Missing parameters: teamid");
       }
 
-      if (NULL != $params) {
-
-         if(self::$logger->isDebugEnabled()) {
-            self::$logger->debug("execute() ISel=".$inputIssueSel->name.' startTimestamp='.$params['startTimestamp'].' endTimestamp='.$params['endTimestamp']);
-         }
-         #echo "start ".date('Y-m-d', $params['startTimestamp']). " end ".date('Y-m-d', $params['endTimestamp'])."<br>";
-
-         if (array_key_exists('teamid', $params)) {
-            $this->teamid = $params['teamid'];
-         } else {
-            throw new Exception("Missing parameter: teamid");
-         }
-
-         if (array_key_exists('startTimestamp', $params)) {
-            $this->startTimestamp = $params['startTimestamp'];
-         }
-
-         if (array_key_exists('endTimestamp', $params)) {
-            $this->endTimestamp = $params['endTimestamp'];
-         }
-
-         if (array_key_exists('showSidetasks', $params)) {
-            // if false, sidetasks (found in IssueSel) will be included in 'elapsed'
-            // if true, sidetasks (found in IssueSel) will be displayed as 'sidetask'
-            $this->showSidetasks = $params['showSidetasks'];
-         }
+      if(self::$logger->isDebugEnabled()) {
+         self::$logger->debug("execute() ISel=".$inputIssueSel->name.' startTimestamp='.$params['startTimestamp'].' endTimestamp='.$params['endTimestamp']);
       }
+      #echo "start ".date('Y-m-d', $params['startTimestamp']). " end ".date('Y-m-d', $params['endTimestamp'])."<br>";
+
+      if (array_key_exists('teamid', $params)) {
+         $this->teamid = $params['teamid'];
+      } else {
+         throw new Exception("Missing parameter: teamid");
+      }
+
+      if (array_key_exists('startTimestamp', $params)) {
+         $this->startTimestamp = $params['startTimestamp'];
+      }
+
+      if (array_key_exists('endTimestamp', $params)) {
+         $this->endTimestamp = $params['endTimestamp'];
+      }
+
+      if (array_key_exists('showSidetasks', $params)) {
+         // if false, sidetasks (found in IssueSel) will be included in 'elapsed'
+         // if true, sidetasks (found in IssueSel) will be displayed as 'sidetask'
+         $this->showSidetasks = $params['showSidetasks'];
+      }
+
+            // create key for APC_Cache
+      $key = $inputIssueSel->getUniqueKey().'_'.
+             $this->teamid.'_'.
+             $this->startTimestamp.'_'.
+             $this->endTimestamp.'_'.
+             (($this->showSidetasks) ? '1' : '0');
+      $this->uniqueKey = 'ActivityIndicator_'.md5($key);
+
    }
 
 
@@ -102,6 +110,14 @@ class ActivityIndicator implements IndicatorPlugin {
     */
    public function execute(IssueSelection $inputIssueSel, array $params = NULL) {
       $this->checkParams($inputIssueSel, $params);
+
+      // check if in APC_Cache
+      if (ApcCache::getInstance()->exists($this->uniqueKey)) {
+         if (self::$logger->isDebugEnabled()) {
+            self::$logger->debug("smartyVariables is in ApcCache, execData not computed");
+         }
+         return;
+      }
 
       $team = TeamCache::getInstance()->getTeam($this->teamid);
 
@@ -221,6 +237,18 @@ class ActivityIndicator implements IndicatorPlugin {
    }
 
    public function getSmartyObject() {
+
+      // check if in APC_Cache
+      $smartyVariables = ApcCache::getInstance()->get($this->uniqueKey);
+
+      if (!is_null($smartyVariables)) {
+         if (self::$logger->isDebugEnabled()) {
+            self::$logger->debug("smartyVariables loaded from ApcCache");
+         }
+         #echo "restore ".md5(serialize($smartyVariables)).'<br>';
+         return $smartyVariables;
+      }
+
       $usersActivities = array();
 
       $totalLeave = 0;
@@ -272,11 +300,18 @@ class ActivityIndicator implements IndicatorPlugin {
          $jqplotData[T_('SideTask')] = $totalActivity['sidetask'];
       }
 
-      return array(
+      $smartyVariables = array(
          'usersActivities' => $usersActivities,
          'totalActivity' => $totalActivity,
          'jqplotData' => Tools::array2json($jqplotData)
       );
+      // Save in APC_Cache
+      $ttl = Constants::$apc_cache_ActivityIndicator;
+      ApcCache::getInstance()->set($this->uniqueKey, $smartyVariables, $ttl);
+      #echo "save ".md5(serialize($smartyVariables)).'<br>';
+
+
+      return $smartyVariables;
    }
 }
 

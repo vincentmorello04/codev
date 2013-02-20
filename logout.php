@@ -35,6 +35,9 @@ unset($_SESSION['userid']);
 unset($_SESSION['username']);
 unset($_SESSION['realname']);
 
+// this ensures that session_id is regenerated at each login (usefull for APCCache uniqueId)
+session_regenerate_id(true);
+
 session_destroy();
 
 // load homepage

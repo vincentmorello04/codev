@@ -33,6 +33,8 @@ class BudgetDriftHistoryIndicator implements IndicatorPlugin {
     */
    private static $logger;
 
+   private $uniqueKey;
+
    private $startTimestamp;
    private $endTimestamp;
    private $interval;
@@ -110,6 +112,24 @@ class BudgetDriftHistoryIndicator implements IndicatorPlugin {
       }
    }
 
+   /**
+    * returns a unique hash identifying this Instance
+    *
+    * the key is based on params & isel uniqueKey
+    *
+    */
+   private function getUniqueKey(IssueSelection $inputIssueSel) {
+      if (is_null($this->uniqueKey)) {
+         $key = $this->startTimestamp.'_'.
+                $this->endTimestamp.'_'.
+                $this->interval.'_'.
+                $this->provisionDays.'_'.
+                $inputIssueSel->getUniqueKey();
+         $this->uniqueKey = 'BudgetDriftHistoryIndicator_'.md5($key);
+      }
+      return $this->uniqueKey;
+   }
+
 
    private function getElapsedData(IssueSelection $inputIssueSel, array $timestampList) {
       $this->elapsedData = array();
@@ -145,6 +165,17 @@ class BudgetDriftHistoryIndicator implements IndicatorPlugin {
    public function execute(IssueSelection $inputIssueSel, array $params = NULL) {
 
       $this->checkParams($inputIssueSel, $params);
+
+      // check if in APC_Cache
+      $apcCacheKey = $this->getUniqueKey($inputIssueSel);
+      $this->execData = ApcCache::getInstance()->get($apcCacheKey);
+
+      if (!is_null($this->execData)) {
+         if (self::$logger->isDebugEnabled()) {
+            self::$logger->debug("execData loaded from ApcCache");
+         }
+         return $this->execData;
+      }
 
       // -------- elapsed in the period
       $startTimestamp = mktime(0, 0, 0, date('m', $params['startTimestamp']), date('d', $params['startTimestamp']), date('Y', $params['startTimestamp']));
@@ -196,6 +227,10 @@ class BudgetDriftHistoryIndicator implements IndicatorPlugin {
       $this->execData['budgetDriftDays'] = $driftDaysList;
       $this->execData['budgetDriftPercent'] = $driftPercentList;
       $this->execData['budgetDriftTable'] = $tableData;
+
+      // Save in APC_Cache
+      $ttl = Constants::$apc_cache_indicators;
+      ApcCache::getInstance()->set($apcCacheKey, $this->execData, $ttl);
 
       return $this->execData;
    }

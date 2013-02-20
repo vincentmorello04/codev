@@ -29,6 +29,8 @@ class DetailedChargesIndicator implements IndicatorPlugin {
     */
    private static $logger;
 
+   private $uniqueKey;
+
    protected $inputIssueSel;
 
    protected $execData;
@@ -147,6 +149,15 @@ class DetailedChargesIndicator implements IndicatorPlugin {
          throw new Exception("Missing parameter: allFilters");
       }
 
+      // create key for APC_Cache
+      $key = $inputIssueSel->getUniqueKey().'_'.
+             $this->teamid.'_'.
+             $this->userid.'_'.
+             $this->maxTooltipsPerPage.'_'.
+             $this->selectedFilters.'_'.
+             (($this->isManager) ? '1' : '0');
+      $this->uniqueKey = 'DetailedChargesIndicator_'.md5($key);
+
 
    }
 
@@ -162,6 +173,14 @@ class DetailedChargesIndicator implements IndicatorPlugin {
 
       $this->inputIssueSel = $inputIssueSel;
 
+      // check if in APC_Cache
+      if (ApcCache::getInstance()->exists($this->uniqueKey)) {
+         if (self::$logger->isDebugEnabled()) {
+            self::$logger->debug("smartyVariables is in ApcCache, execData not computed");
+         }
+         return;
+      }
+
       // do the work ...
       $filterMgr = new FilterManager($inputIssueSel, $this->filterList);
       $resultList = $filterMgr->execute();
@@ -172,6 +191,17 @@ class DetailedChargesIndicator implements IndicatorPlugin {
 
 
    public function getSmartyObject() {
+
+      // check if in APC_Cache
+      $smartyVariables = ApcCache::getInstance()->get($this->uniqueKey);
+
+      if (!is_null($smartyVariables)) {
+         if (self::$logger->isDebugEnabled()) {
+            self::$logger->debug("smartyVariables loaded from ApcCache");
+         }
+         #echo "restore ".md5(serialize($smartyVariables)).'<br>';
+         return $smartyVariables;
+      }
 
       $smartyVariables = array();
 
@@ -188,6 +218,11 @@ class DetailedChargesIndicator implements IndicatorPlugin {
          $smartyVariables = $this->getDetailed($this->execData, $this->filterDisplayNames, $smartyVariables);
       }
       $smartyVariables = $this->getIssues($this->execData, $this->filterDisplayNames, $smartyVariables);
+
+      // Save in APC_Cache
+      $ttl = Constants::$apc_cache_DetailedChargesIndicator;
+      ApcCache::getInstance()->set($this->uniqueKey, $smartyVariables, $ttl);
+      #echo "save ".md5(serialize($smartyVariables)).'<br>';
 
       #var_dump($smartyVariables);
       return $smartyVariables;

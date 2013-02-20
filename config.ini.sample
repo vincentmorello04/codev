@@ -46,3 +46,10 @@ relationship_constrains = 2501
 ; set to 0 to display all tooltips.
 max_tooltips_per_page = 500
 
+; if APC Cache is enabled, set data persistance (in seconds)
+apc_cache_enabled = 1
+apc_cache_configFile = 3600
+apc_cache_indicators = 60
+apc_cache_DetailedChargesIndicator = 1
+apc_cache_ActivityIndicator = 1
+

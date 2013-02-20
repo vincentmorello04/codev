@@ -66,6 +66,11 @@ class Constants {
     * tooltips use +30% Memory on project_info page...
     */
    public static $maxTooltipsPerPage = 500;
+   public static $apc_cache_enabled = TRUE; // Note: cache MUST be enabled by default
+   public static $apc_cache_configFile = 3600; // default = 1 hour
+   public static $apc_cache_indicators = 60; // default = 60 sec.
+   public static $apc_cache_DetailedChargesIndicator = 1; // default = 1 sec.
+   public static $apc_cache_ActivityIndicator = 1; // default = 1 sec.
 
    
    /**
@@ -89,23 +94,56 @@ class Constants {
    }
 
    /**
+    * check 
+    * @param type $str
+    * @param type $default
+    * @return boolean
+    */
+   private static function getBooleanValue($str, $default = FALSE) {
+      if (!is_null($str)) {
+         $val = strtoupper($str);
+         if (('ON' === $val) || ('TRUE' === $val) || ('1' === $val)) {
+            return TRUE; 
+         } else if (('OFF' === $val) || ('FALSE' === $val) || ('0' === $val)) {
+            return FALSE; 
+         }
+      }
+      if (self::$logger->isDebugEnabled()) {
+         self::$logger->debug("getBooleanValue: unknown boolean value, set default.");
+      }
+      return $default;
+   }
+   
+   /**
     * get config from ini file
     */
    public static function parseConfigFile() {
 
-      // TODO workaround
-      $file = self::$config_file;
 
-      if (!file_exists($file)) {
-         if (!self::$quiet) {
-            self::$logger->error("ERROR: parseConfigFile() file ".$file." NOT found !");
-            echo "ERROR: parseConfigFile() file ".$file." NOT found !";
+      // Note: this is the first call, cache is enabled by default, otherwise you could not check
+      // if this file is cached or not.
+      $ini_array = ApcCache::getInstance()->get('configFile', true);
+      
+      // if not found in APC cache, read file
+      if (is_null($ini_array)) {
+
+         // TODO workaround
+         $file = self::$config_file;
+
+         if (!file_exists($file)) {
+            if (!self::$quiet) {
+               self::$logger->error("ERROR: parseConfigFile() file ".$file." NOT found !");
+               echo "ERROR: parseConfigFile() file ".$file." NOT found !";
+            }
+            return FALSE;
          }
-         return FALSE;
+         $ini_array = parse_ini_file($file, true);
+
+      } else {
+         if (self::$logger->isDebugEnabled()) {
+            self::$logger->debug("configFile loaded from ApcCache");
+         }
       }
-
-      $ini_array = parse_ini_file($file, true);
-
       #print_r($ini_array);
 
       $general = $ini_array['general'];
@@ -152,13 +190,44 @@ class Constants {
       if (array_key_exists('max_tooltips_per_page', $perf)) {
          self::$maxTooltipsPerPage = $perf['max_tooltips_per_page'];
       }
+      
+      if (array_key_exists('apc_cache_enabled', $perf)) {
+         self::$apc_cache_enabled   = self::getBooleanValue($perf['apc_cache_enabled'], true);
+      } else {
+         self::$apc_cache_enabled   = true;
+      }
+      // Note: APCCache is enabled by default, now it must be set to the real value
+      ApcCache::getInstance()->setEnabled(self::$apc_cache_enabled);
+      
+      if (array_key_exists('apc_cache_configFile', $perf)) {
+         self::$apc_cache_configFile   = $perf['apc_cache_configFile'];
+      }
+      if (array_key_exists('apc_cache_indicators', $perf)) {
+         self::$apc_cache_indicators   = $perf['apc_cache_indicators'];
+      }
+      if (array_key_exists('apc_cache_DetailedChargesIndicator', $perf)) {
+         self::$apc_cache_DetailedChargesIndicator   = $perf['apc_cache_DetailedChargesIndicator'];
+      }
+      if (array_key_exists('apc_cache_ActivityIndicator', $perf)) {
+         self::$apc_cache_ActivityIndicator   = $perf['apc_cache_ActivityIndicator'];
+      }
 
+      // save this file in APC Cache
+      if (ApcCache::getInstance()->isEnabled()) {
+         $perf = $ini_array['perf'];
+         $ttl = $perf['apc_cache_configFile'];
+         if (!is_numeric($ttl)) { $ttl = self::$apc_cache_configFile; }
+         ApcCache::getInstance()->set('configFile', $ini_array, $ttl, true);
+      }
+      
       // -----
 
       /* FIXME WORKAROUND: SQL procedures still use codev_config_table.bug_resolved_status_threshold ! */
       $desc = "bug resolved threshold as defined in Mantis (g_bug_resolved_status_threshold)";
       self::$logger->warn("WORKAROUND update codev_config_table.bug_resolved_status_threshold = ".self::$bug_resolved_status_threshold);
       Config::getInstance()->setValue(Config::id_bugResolvedStatusThreshold, self::$bug_resolved_status_threshold, Config::configType_int , $desc);
+
+
    }
 
    public static function writeConfigFile() {
@@ -211,6 +280,13 @@ class Constants {
       $perf[] = '; display tooltips on only the x last_updated issues.';
       $perf[] = '; set to 0 to display all tooltips.';
       $perf['max_tooltips_per_page'] = self::$maxTooltipsPerPage;
+      $perf[] = '';
+      $perf[] = '; if APC Cache is enabled, set data persistance (in seconds)';
+      $perf['apc_cache_enabled'] = self::$apc_cache_enabled ? '1' : '0';
+      $perf['apc_cache_configFile'] = self::$apc_cache_configFile;
+      $perf['apc_cache_indicators'] = self::$apc_cache_indicators;
+      $perf['apc_cache_DetailedChargesIndicator'] = self::$apc_cache_DetailedChargesIndicator;
+      $perf['apc_cache_ActivityIndicator'] = self::$apc_cache_ActivityIndicator;
 
 
       $ini_array = array();

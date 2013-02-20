@@ -26,6 +26,8 @@ class ProgressHistoryIndicator implements IndicatorPlugin {
     */
    private static $logger;
 
+   private $uniqueKey;
+
    private $startTimestamp;
    private $endTimestamp;
    private $interval;
@@ -90,6 +92,20 @@ class ProgressHistoryIndicator implements IndicatorPlugin {
       } else {
          throw new Exception("Missing parameter: interval");
       }
+   }
+
+   /**
+    * returns a unique hash identifying this Instance
+    *
+    * the key is based on params & isel uniqueKey
+    *
+    */
+   private function getUniqueKey(IssueSelection $inputIssueSel) {
+      if (is_null($this->uniqueKey)) {
+         $key = $this->startTimestamp.'_'.$this->endTimestamp.'_'.$this->interval.'_'.$inputIssueSel->getUniqueKey();
+         $this->uniqueKey = 'ProgressHistoryIndicator_'.md5($key);
+      }
+      return $this->uniqueKey;
    }
 
    /**
@@ -190,6 +206,17 @@ class ProgressHistoryIndicator implements IndicatorPlugin {
    public function execute(IssueSelection $inputIssueSel, array $params = NULL) {
       $this->checkParams($inputIssueSel, $params);
 
+      // check if in APC_Cache
+      $apcCacheKey = $this->getUniqueKey($inputIssueSel);
+      $this->execData = ApcCache::getInstance()->get($apcCacheKey);
+
+      if (!is_null($this->execData)) {
+         if (self::$logger->isDebugEnabled()) {
+            self::$logger->debug("execData loaded from ApcCache");
+         }
+         return;
+      }
+
       $startTimestamp = mktime(23, 59, 59, date('m', $params['startTimestamp']), date('d', $params['startTimestamp']), date('Y', $params['startTimestamp']));
       $endTimestamp   = mktime(23, 59, 59, date('m', $params['endTimestamp']), date('d',$params['endTimestamp']), date('Y', $params['endTimestamp']));
 
@@ -268,6 +295,11 @@ class ProgressHistoryIndicator implements IndicatorPlugin {
       $this->execData = array();
       $this->execData['theo'] = $theoBacklog;
       $this->execData['real'] = $realBacklog;
+
+      // Save in APC_Cache
+      $ttl = Constants::$apc_cache_indicators;
+      ApcCache::getInstance()->set($apcCacheKey, $this->execData, $ttl);
+
    }
 
    public function getSmartyObject() {

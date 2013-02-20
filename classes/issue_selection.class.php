@@ -46,6 +46,8 @@ class IssueSelection {
     */
    private $provision;
 
+   private $uniqueKey;
+
    /**
     * @var Issue[]
     */
@@ -64,6 +66,23 @@ class IssueSelection {
       $this->provision = 0;
 
       $this->issueList = array();
+   }
+
+   /**
+    * returns a unique hash identifying this IssueSelection
+    * 
+    * the key is based on IS_name and bugid
+    * 
+    */
+   public function getUniqueKey() {
+      if (is_null($this->uniqueKey)) {
+         $key = '';
+         foreach ($this->issueList as $issue) {
+            $key .= $issue->getId();
+         }
+         $this->uniqueKey = str_replace(' ', '-', $this->name).'-'.md5($key);
+      }
+      return $this->uniqueKey;
    }
 
    /**

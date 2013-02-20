@@ -103,6 +103,7 @@
 >   + On windows you will also need to add in the [PHP] section
 
 >>  `extension=php_gd2.dll`
+>>  `extension=php_apc.dll`
 
 > #### Restart services
 

@@ -112,7 +112,7 @@ class Tools {
          }
       }
    }
-   
+
    /**
     * returns an HTML link to the TaskInfo page for Issue $bugid
     * ex: http://172.24.209.4/codev/reports/issue_info.php?bugid=60
@@ -524,7 +524,7 @@ class Tools {
          return $finalURL;
       }
    }
-   
+
    /**
     * Parse file and execute commands via PHP mysql lib.
     * @static
@@ -545,8 +545,8 @@ class Tools {
          $error = 'ERROR : could not LOAD_FILE ('.$sqlFile.') : NULL returned.';
          echo "<span class='error_font'>$error</span><br />";
          exit;
-      }      
-      
+      }
+
 
       /*
       $request = "";
@@ -903,8 +903,8 @@ class Tools {
    }
 
    /**
-    * 
-    * @param string $from humman readable size (128M, 12G, 100K) 
+    *
+    * @param string $from humman readable size (128M, 12G, 100K)
     * @return int bytes
     */
    public static function convertToBytes($from){
@@ -942,7 +942,7 @@ class Tools {
 
          #echo "createTimestampList() timestamp = ".date("Y-m-d H:i:s", $timestamp)."<br>";
          $timestampList[] = $timestamp;
-         
+
          $newTimestamp = strtotime("+$interval day",$timestamp);
          if (0 == $newTimestamp) {
             $e = new Exception("error strtotime(+$interval day, ".date("Y-m-d H:i:s", $newTimestamp).")");
@@ -955,7 +955,7 @@ class Tools {
 
       $timestampList[] = $end_timestamp;
       #echo "createTimestampList() latest = ".date("Y-m-d H:i:s", $end_timestamp)."<br>";
-      
+
       return $timestampList;
    }
 
@@ -1026,10 +1026,10 @@ class Tools {
    /**
     * this method causes big trouble when using CodevTT behind a reverseProxy
     * that would forward HTTPS requests to HTTP
-    * 
+    *
     * this method is also responsible for the 'subdirectory install' problem
     * (installing CodevTT in a folder named '/var/www/html/tools/codevtt' fails)
-    * 
+    *
     * @deprecated
     * @static
     * @return string
@@ -1076,9 +1076,9 @@ class Tools {
 
    /**
     * write ini file (read with parse_ini_file)
-    * 
+    *
     * source: http://www.php.net/manual/en/function.parse-ini-file.php
-    * 
+    *
     * @param type $array
     * @param type $file
     *
@@ -1145,10 +1145,6 @@ class Tools {
          return FALSE;
       }
       return TRUE;
-   }
-   
-   public static function isConnectedUser() {
-      return array_key_exists('userid',$_SESSION);
    }
 
    public static function endsWith($haystack, $needle)
@@ -1402,10 +1398,10 @@ class Tools {
       return FALSE;
    }
 
-   
+
    /**
     * copy Directory with it's content
-    * 
+    *
     * @param type $src
     * @param type $dst
     * @return bool success or failure
@@ -1455,6 +1451,81 @@ class Tools {
          }
       }
       rmdir($dirPath);
+   }
+
+   public static function isConnectedUser() {
+      if (array_key_exists('userid', $_SESSION)) {
+         return TRUE;
+      } else {
+         Tools::attemptSingleSignOn();
+         if (array_key_exists('userid', $_SESSION)) {
+            return TRUE;
+         }
+      }
+      return FALSE;
+   }
+
+   public static function attemptSingleSignOn() {
+
+      # if the IIS is configured for windows authentication,
+      # then $_SERVER will contain the windows AUTH_USER login;
+      # we rely on the mantis table to only hold valid domain
+      # user accounts (which we enforce via the ldap login);
+      # note: the authentication happens between the IIS and
+      # the browser, there is no need check the password here
+      # basically we are out of the loop and rely on the IIS
+      # to only let the user access this page if authenticated
+
+      if (isset($_SERVER['AUTH_USER'])) {
+         $temp = explode('\\', $_SERVER['AUTH_USER']);
+         if ($temp[1] == "") {
+            $name = $temp[0];
+         } else {
+            $name = $temp[1];
+         }
+         Tools::login($name);
+      }
+   }
+
+   private static function login($user) {
+      global $logger;
+      $formattedUser = SqlWrapper::getInstance()->sql_real_escape_string($user);
+      $query = "SELECT id, username, realname FROM `mantis_user_table` WHERE username = '" . $formattedUser . "';";
+      $result = SqlWrapper::getInstance()->sql_query($query);
+
+      if ($result && SqlWrapper::getInstance()->sql_num_rows($result) == 1 && $row_login = SqlWrapper::getInstance()->sql_fetch_object($result)) {
+         $_SESSION['userid'] = $row_login->id;
+         $_SESSION['username'] = $row_login->username;
+         $_SESSION['realname'] = $row_login->realname;
+
+         try {
+            $user = UserCache::getInstance()->getUser($row_login->id);
+
+            $locale = $user->getDefaultLanguage();
+            if (NULL != $locale) {
+               $_SESSION['locale'] = $locale;
+            }
+
+            $teamid = $user->getDefaultTeam();
+            if (0 != $teamid) {
+               $_SESSION['teamid'] = $teamid;
+            }
+
+            $projid = $user->getDefaultProject();
+            if (0 != $projid) {
+               $_SESSION['projectid'] = $projid;
+            }
+         } catch (Exception $e) {
+            if (self::$logger->isDebugEnabled()) {
+               $logger->debug("could not load preferences for user $row_login->id");
+            }
+         }
+
+         $logger->info('user ' . $row_login->id . ' logged in: ' . $row_login->username . ' (' . $row_login->realname . ')' . ' defaultTeam = ' . $user->getDefaultTeam());
+         return TRUE;
+      } else {
+         return FALSE;
+      }
    }
 
 }

@@ -7,6 +7,10 @@ body {
 h1 {
   text-align: center;
 }
+hr {
+	border: 0;
+	border-top: 1px solid #B6B6B6;
+}
 img {
   border: 0;
   margin: 0;
@@ -78,7 +82,8 @@ table.invisible tbody {
 }
 
 /* remove the annoying wobble when hovering over the header of the time tracking table */
-.dayHeader {
+.dayHeader,
+.dayTask {
     border: 1px solid transparent;
 }
 
@@ -229,11 +234,9 @@ input.datepicker, img.ui-datepicker-trigger {
 	text-align: center;
 }
 
-/* makes the date selector dropdown look like one nice trigger field */
+/* makes the trigger field look nicer */
 img.ui-datepicker-trigger {
-	border-top: 1px solid #B6B6B6;
-	border-bottom: 1px solid #B6B6B6;
-	border-right: 1px solid #B6B6B6;
+	margin-left:2px;
 }
 
 /* START Datatable */
@@ -447,5 +450,31 @@ ul.dropdown li:hover > ul.submenu {
 #table-wrapper table {
   width:100%;
 }
-/* END Table with scrollbar */
 
+/* sub-tab forms without box, since the bottom
+   border visually clashes with the footer line */
+.tabsNoBox div {
+	border-left: 0 !important;
+	border-right: 0 !important;
+	border-bottom: 0 !important;
+}
+
+/* styles for admin section checklists */
+.checklist {
+	max-width: 600px;
+}
+
+.checklist,
+.checklist * {
+	vertical-align: middle;
+}
+
+.checklist label {
+	font-weight: bold;
+}
+
+/* better alignment for horizontal forms */
+.horizontal-row,
+.horizontal-row * {
+	vertical-align: middle !important;
+}

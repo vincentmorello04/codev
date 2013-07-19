@@ -116,6 +116,15 @@ class Config {
 
    const default_timetrackingFilters = "onlyAssignedTo:0,hideResolved:0,hideDevProjects:0";
 
+	const INTEGRATION = 'integrationSettings';
+	const INTEGRATION_SSO = 'useSingleSignOn';
+	const INTEGRATION_RELATIVE_BASE_REF = 'useRelativeRef';
+
+	const TIME_BOOKING = 'timeTrackSettings';
+	const TIME_BOOKING_SIDE_TASK_STATUS = 'sideTaskStatusIdentifier';
+	const TIME_BOOKING_INC_BL_ON_DEL = 'incrementBacklogOnCancel';
+	const TIME_BOOKING_CAN_CANCEL_BL = 'allowCancelBacklogDialogue';
+
    // TODO Move to a more appropriate class
    public static $codevVersionHistory = array(
       "v0.01.0" => "(17 May 2010) - CodevTT project creation",

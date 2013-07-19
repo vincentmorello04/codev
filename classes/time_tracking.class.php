@@ -765,7 +765,7 @@ class TimeTracking {
 
 		// create data structure: one data row
 		// for each project, one column per user
-		$workingDays['user_name'][] = "-"; // first row first column
+		$workingDays['user_name'][] = ""; // first row first column
 		foreach ($projects as $project) { // one row for each project
 			$workingDays[$project->getId()]['project_name'] = $project->getName();
 			foreach ($users as $user) {
@@ -775,7 +775,7 @@ class TimeTracking {
 			}
 			$workingDays[$project->getId()]['sum_project'] = 0;
 		}
-		$workingDays['sum_user'][] = "-"; // last row first column
+		$workingDays['sum_user'][] = ""; // last row first column
 		foreach ($users as $user) {
 			if ($user->isTimeBookingUser($this)) {
 				// adding the name and sum identifiers is required
@@ -809,7 +809,7 @@ class TimeTracking {
 					self::$logger->debug("getWorkingDaysPerProjectPerUser: issue=" . $timeTrack->getIssueId() . ", project=" . $projectId . ", user=" . $userName . ", time=" . $timeTrack->getDuration());
 				}
 			} catch (Exception $exp) {
-				// XXX show some error on the screen since the data is wrong
+				// MBU show some error on the screen since the data is wrong
 				self::$logger->warn("getWorkingDaysPerProjectPerUser: issue " . $timeTrack->getIssueId() . " not found in Mantis DB.");
 			}
 		}

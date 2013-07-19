@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="{$locale}" xml:lang="{$locale}">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{$locale}">
 <head>
-	<!-- force IE standards mode -->
+	<!-- force IE into standards compliant mode -->
 	<meta http-equiv="x-ua-compatible" content="IE=Edge"/>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 	<meta http-equiv="Content-Language" content="{$locale}"/>
@@ -10,8 +10,11 @@
 
 	<title>{$pageName} - CodevTT</title>
 
-	<!-- relative base URL breaks IE and violates the W3C standard -->
-	<base href="{Tools::getServerRootURL()}/"/>
+	<!-- relative base URL breaks IE and violates the W3C standard;
+	     MBU I understand the problem with the reverse proxies, but
+	     generally one should not use base href in web apps anyway;
+	     I need to support IE on my end, so I made this configurable -->
+	<base href="{if Tools::useRelativeBaseRef()}{$rootWebSite}{else}{Tools::getServerRootURL()}{/if}/"/>
 
 	<link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico"/>
 
@@ -44,36 +47,28 @@
 		<table class="invisible" width="100%">
 			<tr align="center">
 				<td width="300">
-					<a href="index.php"><img title="{$codevVersion}" alt="{$codevVersion}" src="{$codevttLogoImage}"/></a>
+               <a href="index.php"><img title="{$codevVersion}" alt="{$codevVersion}" src="{$codevttLogoImage}"  /></a>
 				</td>
-				<td><span style="margin-top: 5px;display:block;text-align: center; font-size:2.5em;font-weight:bold;">{$pageName}</span>
-				</td>
+            <td><span style="margin-top: 5px;display:block;text-align: center; font-size:2.5em;font-weight:bold;" >{$pageName}</span></td>
 				<td width="300" align="left">
-               <span style="display: block; text-align: right;">
-               <a href="{$page}?locale=fr"><img src="images/blank.png" style="vertical-align:middle"
-                                                class="flag flag-fr" title="Francais" alt="Francais" width="18px"
-                                                height="12px"/></a>
-               <a href="{$page}?locale=en"><img src="images/blank.png" style="vertical-align:middle"
-                                                class="flag flag-gb" title="English" alt="English" width="18px"
-                                                height="12px"/></a>
-               <a href="{$page}?locale=pt_BR"><img src="images/blank.png" style="vertical-align:middle"
-                                                   class="flag flag-br" title="Brazil" alt="Brazil" width="18px"
-                                                   height="12px"/></a>
-               </span>
+               <div style="text-align:right">
+               <a href="{$page}?locale=fr"><img src="images/blank.png" style="vertical-align:middle" class="flag flag-fr" title="Francais" alt="Francais" width="18px" height="12px" /></a>
+               <a href="{$page}?locale=en"><img src="images/blank.png" style="vertical-align:middle" class="flag flag-gb" title="English" alt="English" width="18px" height="12px" /></a>
+               <a href="{$page}?locale=pt_BR"><img src="images/blank.png" style="vertical-align:middle" class="flag flag-br" title="Brazil" alt="Brazil" width="18px" height="12px" /></a>
+               </div>
+					{if isset($username)}
+					<div style="text-align:right; margin-top:1em;">
+						{$realname} | <a href="logout.php" title="Save user settings & logout">{t}Disconnect{/t}</a>
+					</div>
+					<div style="text-align:right; margin-top:0.6em;">
+						<span class="floatr">{include file="form/teamForm.html"}</span>
+					</div>
+					{else}
+					{include file="modal/login.html"}
+					{/if}
 				</td>
 			</tr>
 		</table>
-	</div>
-
-	<div id="login">
-		{if isset($username)}<a href="logout.php" title="save user settings & logout">{t}Disconnect{/t}</a>&nbsp;
-		{$username}
-		({$realname})
-         <span class="floatr">
-         {include file="form/teamForm.html"}
-         </span>
-		{else}{include file="modal/login.html"}
-		{/if}
 	</div>
 
 	<div style="margin-top: 8px;">
@@ -86,22 +81,23 @@
 	</div>
 
 	<div>
-		<!-- that's crap ... really ...
+		<!-- IE is standards compliant since version 8;
+		     IE 10 is the most compliant browser at this moment;
+		     probably we should stop discriminating it;
+		     I prefer Chrome or Firefox myself, but still ...
 		<div class="left">
 			{if $usingBrowserIE}<span class="help_font">{t}Note: For a better user experience, use a standards compliant browser such as :{/t} <a
 				href="http://www.mozilla.org/en-US/firefox/new/" target="blank">Firefox</a> {t}or{/t} <a
 				href="http://www.google.com/chrome" target="blank">Chrome</a></span>{/if}
 		</div>
 		-->
-
-		<address class="right">
+      <address class="right">
 			<!-- La liberte n'offre qu'une chance d'etre meilleur, la servitude n'est que la certitude de devenir pire.  (Albert Camus) -->
-			<a href='http://www.gnu.org/licenses/gpl.html' target='_blank'><img title='GPL v3' alt="GPL v3"
-			                                                                    src='images/copyleft.png'/></a>
-			2010-{$year}&nbsp; <span title='Freedom is nothing else but a chance to be better. (Albert Camus)'><a
-				href='http://codevtt.org' target='_blank'>CodevTT.org</a></span><br/>
+         <a href='http://www.gnu.org/licenses/gpl.html' target='_blank'><img title='GPL v3' alt="GPL v3" src='images/copyleft.png' /></a>
+         2010-{$year}&nbsp; <span title='Freedom is nothing else but a chance to be better. (Albert Camus)'><a href='http://codevtt.org' target='_blank'>CodevTT.org</a></span><br/>
 		</address>
 	</div>
 
+      <script src="js/tabs.js" type="text/javascript"></script>
 </body>
 </html>

@@ -123,22 +123,22 @@
          });
       </script>
       <form id="form1" name="form1" method="post" action="{$page}">
-         <fieldset>
+         <fieldset class="horizontal-row">
             <label for="datepicker">{t}From{/t}:</label>
-            <input type="text" id="datepicker" class="datepicker" name="date" maxlength="10" size="10" title="{t}Date{/t}" />
+            <input type="text" id="datepicker" class="datepicker ui-widget-content" name="date" maxlength="10" size="10" title="{t}Date{/t}" />
             {if $projects}
-            <select id="projectid" name="projectid" title="{t}Project{/t}">
+            <select id="projectid" name="projectid" title="{t}Project{/t}" class="ui-widget-content">
                <option value="0">{t}(all){/t}</option>
                {foreach from=$projects key=id item=i}
                <option {if $i.selected}selected="selected"{/if} value="{$i.id}">{$i.name}</option>
                {/foreach}
             </select>
             {/if}
-            <a title="{t}Set filters{/t}" id="filters" style="text-decoration: none" href="{$page}">
+            <a title="{t}Set filters{/t}" id="filters" style="text-decoration:none" href="{$page}">
                {if $isOnlyAssignedTo || $isHideResolved}
-               <img border="0" width="16" height="12" align="absmiddle" src="images/im-filter-active.png" alt="{t}Set filters{/t}" />
+               <img border="0" width="16" height="12" src="images/im-filter-active.png" alt="{t}Set filters{/t}" />
                {else}
-               <img border="0" width="16" height="12" align="absmiddle" src="images/im-filter.png" alt="{t}Set filters{/t}" />
+               <img border="0" width="16" height="12" src="images/im-filter.png" alt="{t}Set filters{/t}" />
                {/if}
             </a>
             <select id="bugid" name="bugid" class="select2" style="width: 600px;" title="{t}Task{/t}">
@@ -146,10 +146,12 @@
                <option value="0"></option>
                {/if}
                {foreach from=$issues key=id item=i}
-               <option {if $i.selected}selected="selected"{/if} value="{$i.id}">{$i.id}{if $i.tcId} / {$i.tcId}{/if} : {$i.summary}</option>
+	            <!-- MBU using the mantis status colours here would just rock the block -->
+               <option value="{$i.id}" {if $i.selected}selected="selected"{/if}>
+	               {$i.id}{if $i.tcId}/{$i.tcId}{/if} | {$i.status}{if $i.handler} | {$i.handler}{/if} &nbsp;&#10152;&nbsp; {$i.summary}</option>
                {/foreach}
             </select>
-            <select id="job" name="job" title="{t}Job{/t}" style="width: 100px;" >
+            <select id="job" name="job" title="{t}Job{/t}" style="width:100px" class="ui-widget-content">
                {if count($jobs) > 1}
                <option value="0"></option>
                {/if}
@@ -157,7 +159,7 @@
                <option {if $i.selected}selected="selected"{/if} value="{$id}">{$i.name}</option>
                {/foreach}
             </select>
-            <select id="duree" name="duree" title="{t}Duration (in days){/t}">
+            <select id="duree" name="duree" title="{t}Duration (in days){/t}" class="ui-widget-content">
                {foreach from=$duration key=id item=i}
                <option {if $i.selected}selected="selected"{/if} value="{$id}">{$i.name}</option>
                {/foreach}
@@ -167,7 +169,7 @@
             <input type="hidden" name="year" value="{$year}" />
             <input type="hidden" name="weekid" value="{$weekid}" />
             {if isset($userid)}<input type="hidden" name="userid" value="{$userid}" />{/if}
-            <input type="button" name="btAddTrack" id="btAddTrack" value="{t}Add{/t}" />
+            <input type="button" name="btAddTrack" id="btAddTrack" value="{t}Add{/t}" class="ui-state-default ui-corner-all" />
          </fieldset>
       </form>
       <script type="text/javascript">
@@ -231,6 +233,9 @@
          <script type="text/javascript">
             jQuery(document).ready(function() {
                var formUpdateWeek = jQuery("#formUpdateWeek");
+
+	            // TODO make sure, that the trigger date field will change as well and vice versa
+	            // currently this is not the case and people end up with tracks in the wrong week
 
                function updateFormWeek() {
                   formUpdateWeek.find("input[name=projectid]").val(jQuery("#projectid").val());
@@ -542,8 +547,16 @@
 
          jQuery("#update_backlog_dialog_form").dialog({
             autoOpen: false,
-            //dialogClass: 'no-close',
-            height: 'auto',
+
+	         // MBU putting the smarty expressions into HTML comments
+	         // prevents IDEs from reporting errors (e.g. Eclipse or IDEA)
+	         // but it must be HTML comments, not JavaScript comments
+
+	         <!--{if !Config::getVariableValueFromKey(Config::TIME_BOOKING, Config::TIME_BOOKING_CAN_CANCEL_BL)}-->
+            dialogClass: 'no-close',
+	         <!--{/if}-->
+
+	         height: 'auto',
             width: 'auto',
             modal: true,
             closeOnEscape: false,
@@ -554,10 +567,12 @@
             buttons: {
                "Update": function() {
                   jQuery("#formUpdateBacklog").submit();
-               },
-               Cancel: function() {
+               }
+	            <!--{if Config::getVariableValueFromKey(Config::TIME_BOOKING, Config::TIME_BOOKING_CAN_CANCEL_BL)}-->
+               , Cancel: function() {
                   jQuery( this ).dialog("close");
                }
+	            <!--{/if}-->
             },
             close: function() {
                allFields.val("").removeClass("ui-state-error");
@@ -608,6 +623,7 @@
    </script>
 
    <div id="update_backlog_dialog_form" title="Task XXX - Update Backlog" class="ui-helper-hidden">
+	  <!-- MBU this must be included in the localization, but I think in general it's helpful -->
 	  <p class="ui-state-error-text">Wichtig: Die Zeit wurde bereits gespeichert. Dieser Dialog dient nur dazu,<br/>die zukünftig noch benötigte Zeit (den Backlog) zu aktualisieren.</p>
       <hr/>
       <p id="issue_summary">Set new value</p>

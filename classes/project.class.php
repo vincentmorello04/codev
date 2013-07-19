@@ -866,8 +866,8 @@ class Project extends Model {
    public function getIssues($handler_id = 0, $isHideResolved = FALSE, $hideStatusAndAbove = 0) {
       if (NULL == $this->bugidListsCache) { $this->bugidListsCache = array(); }
 
+      $sideTaskStatus = Config::getVariableValueFromKey(Config::TIME_BOOKING, Config::TIME_BOOKING_SIDE_TASK_STATUS);
       $key = ($isHideResolved) ? $handler_id.'_true' : $handler_id.'_false';
-
       if (!array_key_exists($key, $this->bugidListsCache)) {
          $issueList = array();
 
@@ -876,13 +876,19 @@ class Project extends Model {
          if (0 != $handler_id) {
             $query  .= "AND handler_id = $handler_id ";
          }
+         if (null != $sideTaskStatus) {
+	         $query  .= "AND ( 1=1 ";
+         }
          if ($isHideResolved) {
             $query  .= "AND status < get_project_resolved_status_threshold(project_id) ";
          }
          if (0 != $hideStatusAndAbove) {
             $query  .= "AND status < $hideStatusAndAbove ";
          }
-
+         if (null != $sideTaskStatus) {
+	         $query .= "OR status = " . $sideTaskStatus;
+	         $query .= " ) ";
+         }
          $query  .= "ORDER BY id DESC";
 
          $result = SqlWrapper::getInstance()->sql_query($query);
@@ -893,13 +899,18 @@ class Project extends Model {
          while($row = SqlWrapper::getInstance()->sql_fetch_object($result)) {
             $issueList[$row->id] = IssueCache::getInstance()->getIssue($row->id, $row);;
          }
-
          $this->bugidListsCache[$key] = array_keys($issueList);
       }
 
+      // MBU there is a bug below, which I don't understand; if there
+		// are only closed projects available, they will be returned now,
+      // although booking on closed tracks is not allowed for the team
       $bugidList = $this->getBugidList($handler_id, $isHideResolved);
-
       return Issue::getIssues($bugidList);
+
+	   // MBU there is another bug (sort of): if you have closed tasks
+	   // in your grid already, they can be selected in the grid and
+	   // will then show in the dropdown (but this is probably academic)
    }
 
    /**
@@ -949,7 +960,7 @@ class Project extends Model {
 
       // if project not defined in any team, then how should I know if sideTask or not ?!
       if (0 == count($this->teamTypeList)) {
-         $msg = "Could not determinate type for project $this->id (empty teamList)";
+         $msg = "Could not determinate type for project (empty teamList): " . $this->name;
          self::$logger->warn("getProjectType(): EXCEPTION $msg");
          throw new Exception($msg);
       }
@@ -977,7 +988,7 @@ class Project extends Model {
          } else {
             // next teams: compare to first team
             if ($globalType != $this->teamTypeList["$teamid"]) {
-               $msg = "Could not determinate type for project $this->id ! (depends on team)";
+               $msg = "Could not determinate type for project (does not depend on team): " . $this->name;
                self::$logger->warn("getProjectType(): EXCEPTION $msg");
                throw new Exception($msg);
             }

@@ -116,17 +116,16 @@ class TimeTrackingController extends Controller {
                     // this status is used by generic side-tasks, which can be
                     // within projects for stuff like 'planning', meetings, etc.
                     // these activities should be reported on the respective
-                    // project's budget, but they won't have estimates, etc.
+                    // project's budget, but they won't have estimations, etc.
                     // --> you need this in a line organization ...
 
                     // open the updateBacklog DialogBox on page reload
                     $issue = IssueCache::getInstance()->getIssue($defaultBugid);
                     $status = $issue->getCurrentStatus();
                     $project = ProjectCache::getInstance()->getProject($issue->getProjectId());
+                    $sideTaskStatus = Config::getVariableValueFromKey(Config::TIME_BOOKING, Config::TIME_BOOKING_SIDE_TASK_STATUS);
                     if (($job != $job_support)
-                            && (100 != $status)
-                            // MBU make this a configuration option
-                            // MBU move this into issue.isSideTask()
+                            && ($sideTaskStatus != $status)
                             && (!$project->isSideTasksProject(array_keys($teamList)))
                             && (!$project->isExternalTasksProject())) {
 
@@ -211,12 +210,11 @@ class TimeTrackingController extends Controller {
                     try {
                         $issue = IssueCache::getInstance()->getIssue($defaultBugid);
                         $project = ProjectCache::getInstance()->getProject($issue->getProjectId());
+                        $sideTaskStatus = Config::getVariableValueFromKey(Config::TIME_BOOKING, Config::TIME_BOOKING_SIDE_TASK_STATUS);
                         // do NOT decrease backlog if job is job_support
                         // MBU don't decrease the backlog for side tasks
                         if ($job != $job_support
-                                && (100 != $issue->getCurrentStatus())
-                                // MBU make this a configuration option
-                                // MBU move this into issue.isSideTask()
+                                && ($sideTaskStatus != $issue->getCurrentStatus())
                                 && (!$project->isSideTasksProject(array_keys($teamList)))
                                 && (!$project->isExternalTasksProject())) {
 
@@ -231,11 +229,13 @@ class TimeTrackingController extends Controller {
                             // - the time track gets removed (undo)
                             // - the backlog gets increased (what the hell)
                             // --> the backlog change must be saved with the time track for undo purposes
+	                        // MBU however the new admin option solves the issue somehow ...
 
-                            //if (!is_null($issue->getBacklog())) {
-                            //    $backlog = $issue->getBacklog() + $duration;
-                            //    $issue->setBacklog($backlog);
-                            //}
+                            if (!is_null($issue->getBacklog())
+		                            && Config::getVariableValueFromKey(Config::TIME_BOOKING, Config::TIME_BOOKING_INC_BL_ON_DEL)) {
+                                $backlog = $issue->getBacklog() + $duration;
+                                $issue->setBacklog($backlog);
+                            }
                         }
 
                         // pre-set form fields
@@ -533,6 +533,10 @@ class TimeTrackingController extends Controller {
             $issues[$issue->getId()] = array(
                 'id' => $issue->getId(),
                 'tcId' => $issue->getTcId(),
+	             // showing handler and status is immensely helpful ...
+	             // users can simply type their name into the search field
+	             'handler' => $issue->getHandlerId() != 0 ? UserCache::getInstance()->getUser($issue->getHandlerId())->getName() : null,
+	             'status' => $issue->getCurrentStatusName(),
                 'summary' => $issue->getSummary(),
                 'selected' => $issue->getId() == $defaultBugid);
         }

@@ -1,17 +1,16 @@
-{if (!isset($accessDenied) || (0 == $accessDenied)) }
 <div id="content">
 
+	{if (!isset($accessDenied) || (0 == $accessDenied))}
 	<div class="center">
 		<form id="dateSelectionForm" name="dateSelectionForm" class="formWithTabsHistory" method="post" action="{$page}">
-			<fieldset>
+			<fieldset class="horizontal-row">
 				{include file="form/dateRangeSelector.html"}
-				<label><input type="checkbox" style="vertical-align:middle"
-				              name="includeLeaves" {$includeLeavesChecked} />{t}Include Absences{/t}
-				</label>
+				&nbsp;
+				<input type="checkbox" id="includeLeaves" name="includeLeaves" {$includeLeavesChecked} />
+				<label for="includeLeaves">{t}Include Absences{/t}</label>
 				<input type="hidden" name="action" value="computeTimeReport"/>
 				<label for="computeButton">&nbsp;</label>
-				<input id="computeButton" class="ui-widget ui-state-default ui-corner-all" type="submit"
-				       value="{t}Compute{/t}"/>
+				<input id="computeButton" class="ui-state-default ui-corner-all" type="submit" value="{t}Compute{/t}"/>
 			</fieldset>
 		</form>
 	</div>
@@ -65,10 +64,10 @@
 		{/if}
 
 	</div>
+	{/if}
 
+	{else}
+	<p class="center ui-state-error-text">{t}Sorry, you need to be member of a Team to access this page.{/t}</p>
 	{/if}
 
 </div>
-{else}
-<p class="center ui-state-error-text">{t}Sorry, you need to be member of a Team to access this page.{/t}</p>
-{/if}

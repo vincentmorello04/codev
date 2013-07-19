@@ -54,8 +54,11 @@ class TimeTrackingTools {
 
       $weekTasks = NULL;
       $holidays = Holidays::getInstance();
-      $weekTracks = $timeTracking->getWeekDetails($userid);
 
+      // MBU only load the user's team projects or we get an exception for
+		// each project which is not in the team list in project->getProjectType
+      // MBU we had this exception and this seems to be the place to fix this
+      $weekTracks = $timeTracking->getWeekDetails($userid, true);
       foreach ($weekTracks as $bugid => $jobList) {
          try {
             $issue = IssueCache::getInstance()->getIssue($bugid);

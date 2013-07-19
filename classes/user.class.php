@@ -875,7 +875,7 @@ class User extends Model {
       return $projList;
    }
 
-   /**
+	/**
     * sum the RAF (or mgrEffortEstim if no RAF defined) of all the opened Issues assigned to me.
     * @param string[] $projList
     * @return int

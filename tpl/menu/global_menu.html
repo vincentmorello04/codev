@@ -1,16 +1,19 @@
 <div class="menu ui-tabs ui-widget ui-widget-content ui-corner-all">
-	<ul class="dropdown ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all"
-	    style="width:100%;">
+	<ul class="dropdown ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
 
-		<li class="ui-corner-top {if $activeGlobalMenuItem == 'index'} ui-state-active {else} ui-state-default {/if}"
-		    style="margin-left:1em;"><a href="index.php" class="button" target="_top">{t}Home{/t}</a></li>
+		<li class="ui-corner-top {if $activeGlobalMenuItem == 'index'} ui-state-active {else} ui-state-default {/if}" style="margin-left:10px">
+			<a href="index.php" class="button" target="_top">{t}Home{/t}</a>
+		</li>
 
-		<li class="ui-corner-top ui-state-default"><a href="{$mantisURL}" title="MantisBT" class="button"
-		                                              target="blank">Mantis</a></li>
+		<li class="ui-corner-top ui-state-default">
+			<a href="{$mantisURL}" title="MantisBT" class="button" target="blank">Mantis</a>
+		</li>
 
-		<li class="ui-corner-top {if $activeGlobalMenuItem == 'TimeTracking'} ui-state-active {else} ui-state-default {/if}"
-		    style="margin-left:2%;"><a href="timetracking/time_tracking.php" title="{t}TimeTracking & team activity{/t}"
-		                               class="button" target="_top">{t}Activity{/t}</a>
+
+		<!-- time tracking and planning -->
+
+		<li class="ui-corner-top {if $activeGlobalMenuItem == 'TimeTracking'} ui-state-active {else} ui-state-default {/if}" style="margin-left:20px">
+			<a href="timetracking/time_tracking.php" title="{t}TimeTracking & team activity{/t}" class="button" target="_top">{t}Activity{/t}</a>
 			<ul class="submenu">
 				<li><a href="timetracking/time_tracking.php">{t}Time Tracking{/t}</a></li>
 				<li><a href="timetracking/team_activity_report.php">{t}Weekly Activity{/t}</a></li>
@@ -19,8 +22,8 @@
 			</ul>
 		</li>
 
-		<li class="ui-corner-top {if $activeGlobalMenuItem == 'Holiday'} ui-state-active {else} ui-state-default {/if}"><a
-				href="timetracking/holidays_report.php" title="{t}Holidays Reports{/t}" class="button">{t}Holidays{/t}</a>
+		<li class="ui-corner-top {if $activeGlobalMenuItem == 'Holiday'} ui-state-active {else} ui-state-default {/if}">
+			<a href="timetracking/holidays_report.php" title="{t}Holidays Reports{/t}" class="button">{t}Holidays{/t}</a>
 			<ul class="submenu">
 				<li><a href="timetracking/holidays_report.php">{t}Display{/t}</a></li>
 				<li><a href="timetracking/set_holidays.php">{t}Add{/t}</a></li>
@@ -28,25 +31,18 @@
 		</li>
 
 		<li class="ui-corner-top {if $activeGlobalMenuItem == 'Planning'} ui-state-active {else} ui-state-default {/if}">
-			<script type="text/javascript">
-				jQuery(document).ready(function() {
-					// If no width is set, get the windows width, reload the page with width in the url.
-					var myWidth = jQuery(window).width();
-					if (myWidth > 500) {
-						myWidth = myWidth - 10;
-					}
-					var url = jQuery("#planningUrl");
-					url.attr("href", url.attr("href") + "?width=" + myWidth);
-				});
-			</script>
 			<a id="planningUrl" href="reports/planning_report.php" title="{t}Check DeadLines{/t}" class="button">{t}Planning{/t}</a>
 		</li>
 
-		<li class="ui-corner-top {if $activeGlobalMenuItem == 'Gantt'} ui-state-active {else} ui-state-default {/if}"><a
-				href="reports/gantt_report.php" title="{t}Gantt Chart{/t}" class="button">{t}Gantt{/t}</a></li>
+		<li class="ui-corner-top {if $activeGlobalMenuItem == 'Gantt'} ui-state-active {else} ui-state-default {/if}">
+			<a href="reports/gantt_report.php" title="{t}Gantt Chart{/t}" class="button">{t}Gantt{/t}</a>
+		</li>
 
-		<li class="ui-corner-top {if $activeGlobalMenuItem == 'IssueInfo'} ui-state-active {else} ui-state-default {/if}"
-		    style="margin-left:2%;"><a href="reports/issue_info.php" title="{t}Task Information{/t}" class="button">{t}Task{/t}</a>
+
+		<!-- information and reporting -->
+
+		<li class="ui-corner-top {if $activeGlobalMenuItem == 'IssueInfo'} ui-state-active {else} ui-state-default {/if}" style="margin-left:20px">
+			<a href="reports/issue_info.php" title="{t}Task Information{/t}" class="button">{t}Task{/t}</a>
 		</li>
 
 		<li class="ui-corner-top {if $activeGlobalMenuItem == 'ProjectInfo'} ui-state-active{else} ui-state-default{/if}">
@@ -56,15 +52,14 @@
 			<a href="reports/time_report.php" title="{t}Team Statistics{/t}" class="button">{t}Team{/t}</a>
 			<ul class="submenu">
 				<li><a href='reports/time_report.php'>{t}Time Report{/t}</a></li>
-				<li><a href='reports/productivity_report.php'>{t}Period Statistics{/t}</a></li>
 				<li><a href="reports/forecasting_report.php" title="{t}Forecasting{/t}">{t}Forecasting{/t}</a></li>
+				<li><a href='reports/productivity_report.php'>{t}Period Statistics{/t}</a></li>
 				<li><a href='reports/statistics.php'>{t}History{/t}</a></li>
 			</ul>
 		</li>
 
-		<li class="ui-corner-top {if $activeGlobalMenuItem == 'Management'} ui-state-active {else} ui-state-default {/if}"
-		    style="margin-left:2%;"><a href="management/command_info.php" title="{t}Contracts & Commands{/t}"
-		                               class="button">{t}Contracts{/t}</a>
+		<li class="ui-corner-top {if $activeGlobalMenuItem == 'Management'} ui-state-active {else} ui-state-default {/if}">
+			<a href="management/command_info.php" title="{t}Contracts & Commands{/t}" class="button">{t}Contracts{/t}</a>
 			<ul class="submenu">
 				<li><a href='management/servicecontract_info.php'>{t}ServiceContract{/t}</a></li>
 				<li><a href='management/commandset_info.php'>{t}CommandSet{/t}</a></li>
@@ -72,7 +67,10 @@
 			</ul>
 		</li>
 
-		<li class="ui-corner-top {if $activeGlobalMenuItem == 'ImportExport'} ui-state-active {else} ui-state-default {/if}">
+
+		<!-- various and administration -->
+
+		<li class="ui-corner-top {if $activeGlobalMenuItem == 'ImportExport'} ui-state-active {else} ui-state-default {/if}" style="margin-left:20px">
 			<a href="import/import_issues.php" title="{t}Import / Export{/t}" class="button">{t}Import / Export{/t}</a>
 			<ul class="submenu">
 				<li><a href="import/import_issues.php">{t}Import Issues{/t}</a></li>
@@ -87,9 +85,10 @@
 
 		<li class="ui-corner-top {if $activeGlobalMenuItem == 'Doc'} ui-state-active {else} ui-state-default {/if}">
 			<a href="doc/doc.php" title="{t}Documentation{/t}" class="button">Doc</a>
-			<!--
+			<!-- MBU local modification
 			<ul class="submenu">
 				<li><a href='doc/doc.php'>{t}Documentation{/t}</a></li>
+            <li><a href='doc/indicateurs_de_production.php'>{t}Productivity Reports{/t}</a></li>
 				<li><a href='doc/phpdoc/html/index.html'>{t}PHP Doc{/t}</a></li>
 			</ul>
 			-->
@@ -102,11 +101,12 @@
 				<li><a href='admin/edit_team.php'>{t}Edit Team{/t}</a></li>
 				<li><a href='admin/edit_jobs.php'>{t}Edit Jobs{/t}</a></li>
 				<li><a href='admin/edit_holidays.php'>{t}Edit Holidays{/t}</a></li>
-				<!--
+				<!-- MBU local modification
 				<li><a href='admin/prepare_project.php'>{t}Prepare Projects{/t}</a></li>
 				<li><a href='admin/workflow.php'>{t}Clone Projects{/t}</a></li>
 				<li><a href='install/uninstall.php' title=''>{t}Uninstall{/t}</a></li>
 				-->
+				<li><a href='admin/admin_further_config.php'>{t}Settings{/t}</a></li>
 				<li><a href='admin/logs.php'>{t}Logs{/t}</a></li>
 			</ul>
 		</li>

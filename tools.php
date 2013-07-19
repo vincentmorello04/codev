@@ -1051,6 +1051,11 @@ class Tools {
       return $rootURL;
    }
 
+	public static function useRelativeBaseRef() {
+		// see the configuration description in the controller
+		return Config::getVariableValueFromKey(Config::INTEGRATION, Config::INTEGRATION_RELATIVE_BASE_REF);
+	}
+
    /**
     * @static
     * @param mixed[] $values
@@ -1457,77 +1462,68 @@ class Tools {
       if (array_key_exists('userid', $_SESSION)) {
          return TRUE;
       } else {
-         Tools::attemptSingleSignOn();
+         Tools::attemptSingleSignOnIfAllowed();
          if (array_key_exists('userid', $_SESSION)) {
-            return TRUE;
+            return TRUE; // single sign-on successful
          }
       }
       return FALSE;
    }
 
-   public static function attemptSingleSignOn() {
+   public static function attemptSingleSignOnIfAllowed() {
 
-      # if the IIS is configured for windows authentication,
-      # then $_SERVER will contain the windows AUTH_USER login;
-      # we rely on the mantis table to only hold valid domain
-      # user accounts (which we enforce via the ldap login);
-      # note: the authentication happens between the IIS and
-      # the browser, there is no need check the password here
-      # basically we are out of the loop and rely on the IIS
-      # to only let the user access this page if authenticated
+	   // MBU move these methods into their proper place;
+	   // however, the check should be in isConnectedUser
+
+      // if the IIS is configured for windows authentication,
+      // then $_SERVER will contain the windows AUTH_USER login;
+      // we rely on the mantis table to only hold valid domain
+      // user accounts (which we enforce via the ldap login);
+      // note: the authentication happens between the IIS and
+      // the browser, there is no need check the password here
+      // basically we are out of the loop and rely on the IIS
+      // to only let the user access this page if authenticated
+
+	   if (!Config::getVariableValueFromKey(Config::INTEGRATION, Config::INTEGRATION_SSO)) {
+		   return; // admin did not configure single sign-on
+	   }
 
       if (isset($_SERVER['AUTH_USER'])) {
-         $temp = explode('\\', $_SERVER['AUTH_USER']);
-         if ($temp[1] == "") {
-            $name = $temp[0];
-         } else {
-            $name = $temp[1];
-         }
-         Tools::login($name);
+	      $temp = explode('\\', $_SERVER['AUTH_USER']);
+	      $name = $temp[1] == "" ? $temp[0] : $temp[1];
+	      Tools::login($name);
       }
    }
 
    private static function login($user) {
-      global $logger;
-      $formattedUser = SqlWrapper::getInstance()->sql_real_escape_string($user);
-      $query = "SELECT id, username, realname FROM `mantis_user_table` WHERE username = '" . $formattedUser . "';";
-      $result = SqlWrapper::getInstance()->sql_query($query);
+	   $formattedUser = SqlWrapper::getInstance()->sql_real_escape_string($user);
+	   $query = "SELECT id, username, realname FROM mantis_user_table WHERE username = '" . $formattedUser . "'";
+	   $result = SqlWrapper::getInstance()->sql_query($query);
 
-      if ($result && SqlWrapper::getInstance()->sql_num_rows($result) == 1 && $row_login = SqlWrapper::getInstance()->sql_fetch_object($result)) {
-         $_SESSION['userid'] = $row_login->id;
-         $_SESSION['username'] = $row_login->username;
-         $_SESSION['realname'] = $row_login->realname;
+	   if ($result && SqlWrapper::getInstance()->sql_num_rows($result) == 1 && $record = SqlWrapper::getInstance()->sql_fetch_object($result)) {
+		   $_SESSION['userid'] = $record->id;
+		   $_SESSION['username'] = $record->username;
+		   $_SESSION['realname'] = $record->realname;
 
-         try {
-            $user = UserCache::getInstance()->getUser($row_login->id);
+		   try {
+			   $user = UserCache::getInstance()->getUser($record->id);
+			   $teamId = $user->getDefaultTeam();
+			   if (0 != $teamId) {
+				   $_SESSION['teamid'] = $teamId;
+			   }
+			   $projectId = $user->getDefaultProject();
+			   if (0 != $projectId) {
+				   $_SESSION['projectid'] = $projectId;
+			   }
+			   $locale = $user->getDefaultLanguage();
+			   $_SESSION['locale'] = $locale != null ? $locale : "en"; // defaults to English
 
-            $locale = $user->getDefaultLanguage();
-            if (NULL != $locale) {
-               $_SESSION['locale'] = $locale;
-            }
-
-            $teamid = $user->getDefaultTeam();
-            if (0 != $teamid) {
-               $_SESSION['teamid'] = $teamid;
-            }
-
-            $projid = $user->getDefaultProject();
-            if (0 != $projid) {
-               $_SESSION['projectid'] = $projid;
-            }
-         } catch (Exception $e) {
-            if (self::$logger->isDebugEnabled()) {
-               $logger->debug("could not load preferences for user $row_login->id");
-            }
-         }
-
-         $logger->info('user ' . $row_login->id . ' logged in: ' . $row_login->username . ' (' . $row_login->realname . ')' . ' defaultTeam = ' . $user->getDefaultTeam());
-         return TRUE;
-      } else {
-         return FALSE;
-      }
+		   } catch (Exception $exp) {
+			   self::$logger->warn("Could not load preferences for user: " . $record->username);
+		   }
+		   self::$logger->info('Single sign-on: ' . $record->username . ' (' . $record->realname . '), defaultTeam: ' . $user->getDefaultTeam());
+	   }
    }
-
 }
 
 // Initialize complex static variables

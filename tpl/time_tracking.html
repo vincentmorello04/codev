@@ -39,9 +39,6 @@
    </div>
    {/if}
 
-
-
-
    {if isset($users) || isset($managedUser_realname)}
    {if isset($managedUser_realname)}
 
@@ -413,6 +410,7 @@
                });
             });
          </script>
+
          <div id="deleteTrack_dialog_form" title="{t}Delete track{/t}" class="ui-helper-hidden">
             <p class="ui-state-error-text"><span class="ui-icon float" style="margin:0 7px 20px 0;"></span>{t}Deleted the following timetrack ?{/t}</p>
             <table class="invisible">
@@ -458,11 +456,10 @@
    <script type="text/javascript">
 
       function updateBacklog2(updateBacklogJsonData, issue_summary){
-
          var data = jQuery.parseJSON(updateBacklogJsonData);
 
          // do not display computed backlog: force users to reestimate it !
-         //jQuery("#backlog").val(data['backlog']);
+         jQuery("#calculated_backlog").val(data['backlog']);
 
          // TODO summary not in json because of quotes
          //jQuery("#issue_summary").text(htmlEncode(data['description']));
@@ -472,6 +469,8 @@
          jQuery("#desc_elapsed").text(data['elapsed']);
          //jQuery("#desc_reestimated").text(data['reestimated']);
          jQuery("#desc_drift").text(data['drift']);
+         jQuery("#handler").text(data['handler']);
+         jQuery("#old_backlog").text(data['old_backlog']);
 
          if (data.hasOwnProperty("deadline")) {
             jQuery("#desc_deadline").text(data['deadline']);
@@ -514,12 +513,11 @@
              tips = jQuery("#validateTips"),
              allFields = jQuery([]).add(backlog);
 
+         tips.hide(); // show only on error
+
          function updateTips(t) {
             tips.text(t);
-            //tips.addClass("ui-state-highlight");
-            //setTimeout(function() {
-            //   tips.removeClass("ui-state-highlight", 1500);
-            //}, 500);
+            tips.show();
          }
 
          function checkRegexp(o, regexp, n) {
@@ -544,9 +542,9 @@
 
          jQuery("#update_backlog_dialog_form").dialog({
             autoOpen: false,
-            dialogClass: 'no-close',
+            //dialogClass: 'no-close',
             height: 'auto',
-            width: 500,
+            width: 'auto',
             modal: true,
             closeOnEscape: false,
             open: function() {
@@ -556,30 +554,30 @@
             buttons: {
                "Update": function() {
                   jQuery("#formUpdateBacklog").submit();
+               },
+               Cancel: function() {
+                  jQuery( this ).dialog("close");
                }
-               //,
-               //Cancel: function() {
-               //   jQuery( this ).dialog("close");
-               //}
             },
             close: function() {
                allFields.val("").removeClass("ui-state-error");
                allFields.css("backgroundColor", "transparent");
+               tips.hide(); // the window is reused for BL updates
             }
          });
 
+		 // handler for the dialog submit button (update)
          jQuery("#formUpdateBacklog").submit(function(event) {
             /* stop form from submitting normally */
             event.preventDefault();
 
             var bValid = true;
             allFields.removeClass("ui-state-error");
-            bValid = bValid && checkRegexp(backlog, /^[0-9]+(\.[0-9]5?)?$/i, "format:  '1',  '0.3'  or  '2.55'");
+            bValid = bValid && checkRegexp(backlog, /^[0-9]+(\.[0-9]5?)?$/i, "Required format: '1', '0.3' or '2.55'");
 
             var bugResolvedStatusThreshold = jQuery("#bugResolvedStatusThreshold").val();
             var selectedStatus = jQuery("#status").children(":selected").attr("id");
             bValid = bValid && checkStatus(backlog, selectedStatus, bugResolvedStatusThreshold, "{t}Task not resolved, backlog cannot be '0'{/t}");
-
 
             if (bValid) {
                /* get some values from elements on the page: */
@@ -608,24 +606,29 @@
 
       });
    </script>
+
    <div id="update_backlog_dialog_form" title="Task XXX - Update Backlog" class="ui-helper-hidden">
+	  <p class="ui-state-error-text">Wichtig: Die Zeit wurde bereits gespeichert. Dieser Dialog dient nur dazu,<br/>die zukünftig noch benötigte Zeit (den Backlog) zu aktualisieren.</p>
+      <hr/>
       <p id="issue_summary">Set new value</p>
       <form id="formUpdateBacklog" name="formUpdateBacklog" method="post" action="timetracking/time_tracking_ajax.php" >
          <fieldset>
             <table class="invisible">
                <tbody>
                   <tr>
+                     <th>{t}Assigned{/t} :</th>
+                     <td id="handler">handler</td>
+                  </tr>
+				  <tr>
                      <th><label for="status">{t}Status{/t} :</label></th>
-                     <td>
-                        <select id="status" name="status"> </select>
-                     </td>
+                     <td><select id="status" name="status" style="width:100%"></select></td>
                   </tr>
                   <tr id="tr_deadline">
                      <th>{t}Deadline{/t} :</th>
                      <td id="desc_deadline">date</td>
                   </tr>
                   <tr>
-                     <th>{t}Estimated effort{/t} :</th>
+                     <th>{t}Estimated Effort{/t} :</th>
                      <td id="desc_effortEstim">effortEstim</td>
                   </tr>
                   <tr>
@@ -633,18 +636,21 @@
                      <td id="desc_elapsed">elapsed</td>
                   </tr>
                   <tr>
-                     <th>{t}Effort Deviation{/t} :</th>
-                     <td id="desc_drift">drift</td>
+                     <th>{t}Last Backlog{/t} :</th>
+                     <td id="old_backlog">old_backlog</td>
                   </tr>
                   <tr>
-                     <th><label for="backlog">{t}Backlog{/t} :</label></th>
-                     <td><input type="text" id="backlog" name="backlog" size="3" class="text" /></td>
-                     <td><label id="validateTips" class="error_font" ></label></td>
-                     </td>
+                     <th>{t}Effort Deviation{/t} :</th>
+                     <td><div id="desc_drift" style="width:100%">drift</div></td>
+                  </tr>
+                  <tr>
+                     <th><label for="backlog">{t}New Backlog{/t} :</label></th>
+                     <td><input type="text" id="backlog" name="backlog" class="ui-widget-content" style="width:100%"/></td>
+                     <td id="validateTips" class="ui-state-error-text">validateTips</td>
                   </tr>
                </tbody>
             </table>
-            
+
             <input type="hidden" name="bugid"  value="0" />
             <input type="hidden" name="action" value="updateBacklogAction" />
             {if isset($userid)}<input type="hidden" name="userid" value="{$userid}" />{/if}

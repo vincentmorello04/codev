@@ -137,10 +137,14 @@ class TimeTrackingTools {
                $infoTooltip = '';
             }
 
-
             // prepare json data for the BacklogDialogbox
+            $handler = UserCache::getInstance()->getUser($issue->getHandlerId())->getRealName();
+            $handler = $handler == null ? "" : $handler; // don't render 'null' into the page
             $drift = $issue->getDrift();
             $issueInfo = array(
+               // MBU display handler in case we update someone else's issue
+               'handler' => $handler,
+               'old_backlog' => $issue->getBacklog(),
                'backlog' => $backlog,
                'bugid' => $issue->getId(),
                #'summary' => addslashes(htmlspecialchars($summary)),

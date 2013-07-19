@@ -349,6 +349,14 @@ class User extends Model {
       return $this->teamMemberCache[$key];
    }
 
+	/**
+	 * Whether this user can book time tracks within the given team.
+	 */
+	public function isTimeBookingUser($timeTracking) {
+		return $this->isTeamDeveloper($timeTracking->getTeamid(), $timeTracking->getStartTimestamp(), $timeTracking->getEndTimestamp())
+				|| $this->isTeamManager($timeTracking->getTeamid(), $timeTracking->getStartTimestamp(), $timeTracking->getEndTimestamp());
+	}
+
    /**
     * if no team specified, choose the oldest arrival date
     * @param int $team_id

@@ -77,7 +77,7 @@ table.invisible tbody {
    cursor: pointer;
 }
 
-/* MBU remove the annoying header wobble */
+/* remove the annoying wobble when hovering over the header of the time tracking table */
 .dayHeader {
     border: 1px solid transparent;
 }
@@ -228,6 +228,8 @@ input.datepicker, img.ui-datepicker-trigger {
 	display: inline-block;
 	text-align: center;
 }
+
+/* makes the date selector dropdown look like one nice trigger field */
 img.ui-datepicker-trigger {
 	border-top: 1px solid #B6B6B6;
 	border-bottom: 1px solid #B6B6B6;
@@ -384,7 +386,8 @@ ul.submenu {
    position: absolute;
    top: 100%;
    left: 0;
-	width: 200px;
+	width: 200px; /* fix for Chrome, which will otherwise use the aggregated width of all list items */
+	border-top: 1px solid #B6B6B6; /* fix for IE, otherwise the sub-menu will disappear on slow mouse movement */
 	padding-left: 0;
 }
 ul.submenu li {

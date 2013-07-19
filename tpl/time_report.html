@@ -1,0 +1,74 @@
+{if (!isset($accessDenied) || (0 == $accessDenied)) }
+<div id="content">
+
+	<div class="center">
+		<form id="dateSelectionForm" name="dateSelectionForm" class="formWithTabsHistory" method="post" action="{$page}">
+			<fieldset>
+				{include file="form/dateRangeSelector.html"}
+				<label><input type="checkbox" style="vertical-align:middle"
+				              name="includeLeaves" {$includeLeavesChecked} />{t}Include Absences{/t}
+				</label>
+				<input type="hidden" name="action" value="computeTimeReport"/>
+				<label for="computeButton">&nbsp;</label>
+				<input id="computeButton" class="ui-widget ui-state-default ui-corner-all" type="submit"
+				       value="{t}Compute{/t}"/>
+			</fieldset>
+		</form>
+	</div>
+
+	{if isset($timeTracking)}
+	{include file="modal/consistency_check.html"}
+
+	<div id="timeReport">
+
+		{if $workingDays}
+
+		<h2 align="left">{t}Time spent on Projects{/t}</h2>
+		<table class="float">
+			{foreach from=$workingDays key=rowId item=row}
+			{if ($rowId == 'user_name')}
+			<thead>
+			<tr>
+				{foreach from=$row key=colId item=col}
+				<th style="width:100px;white-space:normal;">{$col}</th>
+				{/foreach}
+			</tr>
+			</thead>
+			{else if ($rowId == 'sum_user')}
+			<tfoot>
+			<tr>
+				{foreach from=$row key=colId item=col}
+				<td style="text-align:center;">{if $col != null}{$col}{/if}</td>
+				{/foreach}
+			</tr>
+			</tfoot>
+			{else}
+			<tbody>
+			<tr>
+				{foreach from=$row key=colId item=col}
+				{if ($colId == 'project_name')}
+				<th>{$col}</th>
+				{else}
+				<td style="text-align:center;">{if $col != null}{$col}{/if}</td>
+				{/if}
+				{/foreach}
+			</tr>
+			</tbody>
+			{/if}
+			{/foreach}
+		</table>
+
+		<div class="ui-helper-clearfix"></div>
+
+		{else}
+		{t}No data available{/t}.
+		{/if}
+
+	</div>
+
+	{/if}
+
+</div>
+{else}
+<p class="center ui-state-error-text">{t}Sorry, you need to be member of a Team to access this page.{/t}</p>
+{/if}

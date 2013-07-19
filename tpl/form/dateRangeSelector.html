@@ -1,24 +1,29 @@
 <script type="text/javascript" src="js/datepicker.js"></script>
 <script type="text/javascript">
-   jQuery(document).ready(function() {
-      {if $locale != en}
-      jQuery.datepicker.setDefaults(jQuery.datepicker.regional['{$locale}']);
-      {/if}
+	jQuery(document).ready(function() {
+		jQuery.datepicker.setDefaults(jQuery.datepicker.regional['{$locale}']);
 
-      // Set the date
-      var startDatePicker = jQuery("#startdatepicker").datepicker("setDate" ,"{$startDate}");
-      var endDatePicker = jQuery("#enddatepicker").datepicker("setDate" ,"{$endDate}");
+		// create the configured picker
+		createDatePicker("#startdatepicker", "{$startDate}");
+		createDatePicker("#enddatepicker", "{$endDate}");
 
-      // Add range date
-      startDatePicker.datepicker("option","beforeShow",function(input) {
-         jQuery(this).datepicker("option","maxDate",endDatePicker.datepicker("getDate"));
-      });
-      endDatePicker.datepicker("option","beforeShow",function(input) {
-         jQuery(this).datepicker("option","minDate",startDatePicker.datepicker("getDate"));
-      });
-   });
+		// define the range constraints
+		jQuery("#startdatepicker").datepicker("option", "beforeShow", function(input) {
+			jQuery("#startdatepicker").datepicker("option", "maxDate", jQuery("#enddatepicker").datepicker("getDate"));
+		});
+		jQuery("#enddatepicker").datepicker("option", "beforeShow", function() {
+			jQuery("#enddatepicker").datepicker("option", "minDate", jQuery("#startdatepicker").datepicker("getDate"));
+		});
+
+		function createDatePicker(name, date) {
+			jQuery(name).datepicker("setDate", date).datepicker("option", "firstDay", 1);
+		}
+	});
 </script>
+
 <label for="startdatepicker">{t}From{/t}:</label>
-<input type="text" id="startdatepicker" class="datepicker" name="startdate" autocomplete="off" maxlength="10" size="10" title="{t}Start Date{/t}" />
-<label for="enddatepicker">{t}To{/t}:</label>
-<input type="text" id="enddatepicker" class="datepicker" name="enddate" autocomplete="off" maxlength="10" size="10" title="{t}End Date (included){/t}" />
+<input type="text" id="startdatepicker" class="datepicker ui-widget-content" name="startdate" maxlength="10" size="10"
+       title="{t}Start Date{/t}"/>
+<label for="enddatepicker">&nbsp;{t}To{/t}:</label>
+<input type="text" id="enddatepicker" class="datepicker ui-widget-content" name="enddate" maxlength="10" size="10"
+       title="{t}End Date (included){/t}"/>

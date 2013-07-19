@@ -755,6 +755,70 @@ class TimeTracking {
       return $workingDaysPerProject;
    }
 
+	/**
+	 * Calculates the time each user spends on the teams projects.
+	 */
+	public function getWorkingDaysPerProjectPerUser($withNoStats = true, $withDisabled = true) {
+		$team = TeamCache::getInstance()->getTeam($this->team_id);
+		$projects = $team->getTrueProjects($withNoStats, $withDisabled);
+		$users = $team->getUsers();
+
+		// create data structure: one data row
+		// for each project, one column per user
+		$workingDays['user_name'][] = "-"; // first row first column
+		foreach ($projects as $project) { // one row for each project
+			$workingDays[$project->getId()]['project_name'] = $project->getName();
+			foreach ($users as $user) {
+				if ($user->isTimeBookingUser($this)) {
+					$workingDays[$project->getId()][$user->getId()] = 0;
+				}
+			}
+			$workingDays[$project->getId()]['sum_project'] = 0;
+		}
+		$workingDays['sum_user'][] = "-"; // last row first column
+		foreach ($users as $user) {
+			if ($user->isTimeBookingUser($this)) {
+				// adding the name and sum identifiers is required
+				// in case there are no time tracks for that user
+				$workingDays['user_name'][$user->getId()] = $user->getRealname();
+				$workingDays['sum_user'][$user->getId()] = 0;
+			}
+		}
+		//$workingDays['user_name'][] = ""; // first row last column
+		// note: should provide some style for the last column
+
+		// calculate the aggregated time
+		$timeTracks = $this->getTimeTracks();
+		foreach ($timeTracks as $timeTrack) {
+			try {
+				$issue = IssueCache::getInstance()->getIssue($timeTrack->getIssueId());
+				$projectId = $issue->getProjectId();
+				$userId = $timeTrack->getUserId();
+
+				if ($team->isNoStatsProject($projectId) && !$withNoStats) {
+					continue; // ignore this issue
+				}
+
+				$workingDays[$projectId][$userId] += $timeTrack->getDuration();
+				$workingDays[$projectId]['sum_project'] += $timeTrack->getDuration();
+				$workingDays['sum_user'][$userId] += $timeTrack->getDuration();
+				$workingDays['sum_user']['sum_project'] += $timeTrack->getDuration();
+
+				if (self::$logger->isDebugEnabled()) {
+					$userName = UserCache::getInstance()->getUser($userId)->getName();
+					self::$logger->debug("getWorkingDaysPerProjectPerUser: issue=" . $timeTrack->getIssueId() . ", project=" . $projectId . ", user=" . $userName . ", time=" . $timeTrack->getDuration());
+				}
+			} catch (Exception $exp) {
+				// XXX show some error on the screen since the data is wrong
+				self::$logger->warn("getWorkingDaysPerProjectPerUser: issue " . $timeTrack->getIssueId() . " not found in Mantis DB.");
+			}
+		}
+		if (self::$logger->isDebugEnabled()) {
+			self::$logger->debug("getWorkingDaysPerProjectPerUser:" . print_r($workingDays, true));
+		}
+		return $workingDays;
+	}
+
    /**
     * Returns an array of (date => duration) containing all days where duration != 1
     * @param int $userid

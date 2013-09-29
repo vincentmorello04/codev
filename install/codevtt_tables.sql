@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `codev_config_table` (
 
 
 INSERT INTO `codev_config_table` (`config_id`, `value`, `type`) VALUES
-('database_version', 12, 1),
+('database_version', 13, 1),
 ('job_support', 2, 1),
 ('blogCategories', '1:General,2:Imputations', 3);
 
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS `codev_job_table` (
 --
 
 INSERT INTO `codev_job_table` (`id`, `name`, `type`, `color`) VALUES
-(1, 'N/A', 1, 'A8FFBD'), 
+(1, 'N/A', 1, 'A8FFBD'),
 (2, 'Support', 0, 'A8FFBD');
 -- --------------------------------------------------------
 
@@ -206,10 +206,25 @@ CREATE TABLE IF NOT EXISTS `codev_team_user_table` (
   `access_level` int(11) unsigned NOT NULL DEFAULT '10',
   `arrival_date` int(11) unsigned NOT NULL,
   `departure_date` int(11) unsigned NOT NULL DEFAULT '0',
-  `average_daily_rate` int(11) default NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
+--
+-- Structure de la table `codev_team_user_adr_table`
+--
+CREATE TABLE IF NOT EXISTS `codev_team_user_adr_table` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `team_id` int(11) NOT NULL,
+  `average_daily_rate` int(11) default NULL,
+  `average_daily_cost` int(11) default NULL,
+  `begin_date` int(11) unsigned NOT NULL,
+  `end_date` int(11) unsigned default NULL,
+  `currency` varchar(3) default 'EUR',
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `team_id` (`team_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
 

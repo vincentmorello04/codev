@@ -135,6 +135,59 @@ class BudgetDriftHistoryIndicator implements IndicatorPlugin {
    }
 
    /**
+    * reestimated = elapsed + duration
+    *
+    * but duration is based on MEE, not max(EE, MEE)
+    *
+    * @return int
+    */
+   private function getReestimated($inputIssueSel, $timestamp) {
+
+      $duration = 0;
+      $issueList = $inputIssueSel->getIssueList();
+      foreach ($issueList as $issue) {
+         $submission = $issue->getDateSubmission();
+
+         if ($submission <= $timestamp) {
+
+            // ------------ BEGIN modified issue->getDuration ---------
+            if ($issue->isResolved($timestamp)) {
+               $issueDuration = 0;
+            } else {
+               $bl = $issue->getBacklog($timestamp);
+               if ( !is_null($bl) && is_numeric($bl)) {
+                  // if Backlog is defined, return the DB value
+                  $issueDuration = $bl;
+               } else {
+                  // Backlog NOT defined, duration = mgrEffortEstim
+                  $issueDuration = $issue->getMgrEffortEstim();
+                  if (is_null($issueDuration)) {
+                     $issueDuration = 0; #NULL;
+                     if(self::$logger->isDebugEnabled()) {
+                        self::$logger->warn("getReestimated(): issue ".$issue->getId()." - duration = 0 (because: backlog & mgrEffortEstim == NULL)");
+                     }
+                  }
+               }
+            }
+            // ------------ END modified getDuration ---------
+            #echo date('Y-m-d', $timestamp)." issue ".$issue->getId()." : duration = $issueDuration<br>";
+
+            $duration += $issueDuration;
+
+         } else {
+            #echo "issue ".$issue->getId()." does not yet exist<br>";
+         }
+
+      }
+      $elapsed = $inputIssueSel->getElapsed(NULL, $timestamp);
+      $reest = $elapsed + $duration;
+      #echo date('Y-m-d', $timestamp)." reest =  $elapsed + $duration = $reest<br>";
+      return $reest;
+   }
+
+
+
+   /**
     *
     * CmdTotalDrift = Reestimated - (MEE + Provisions)
     *
@@ -166,9 +219,8 @@ class BudgetDriftHistoryIndicator implements IndicatorPlugin {
 
          $cmdProvAndMeeDays = $inputIssueSel->getMgrEffortEstim($timestamp) + $this->provisionDays;
          
-			// TODO getReestimated is based on max(effortEstim+effortAdd, mgrEffortEstim) 
-			// which is not what we want here. The budget must be calculated on MEE only !
-			$reestimated = $inputIssueSel->getReestimated($timestamp); // WRONG !
+			// getReestimated based on mgrEffortEstim, NOT max(effortEstim+effortAdd, mgrEffortEstim)
+			$reestimated = $this->getReestimated($inputIssueSel, $timestamp);
 
          $driftDays = $reestimated - $cmdProvAndMeeDays;
 

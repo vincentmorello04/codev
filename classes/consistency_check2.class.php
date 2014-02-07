@@ -658,7 +658,8 @@ class ConsistencyCheck2 {
    public static function checkIncompleteDays(TimeTracking $timeTracking, $userid = NULL) {
       $cerrList = array();
       $now = time();
-
+      $today = date('d/m/Y', $now);
+      
       if (is_null($userid)) {
          $mList = TeamCache::getInstance()->getTeam($timeTracking->getTeamid())->getActiveMembers();
          $useridList = array_keys($mList);
@@ -669,9 +670,8 @@ class ConsistencyCheck2 {
 
          $incompleteDays = $timeTracking->checkCompleteDays($userid, TRUE);
          foreach ($incompleteDays as $date => $value) {
-
-            if ($date > $now) { continue; } // skip dates in the future
-
+         	$dayOfDate = date('d/m/Y', $date);
+            if ($dayOfDate >= $today) { continue; } // skip dates in the future
             $label = NULL;
             if ($value < 1) {
                $label = T_("incomplete (missing ").(1-$value).T_(" days").")";
@@ -686,9 +686,8 @@ class ConsistencyCheck2 {
 
          $missingDays = $timeTracking->checkMissingDays($userid);
          foreach ($missingDays as $date) {
-
-            if ($date > $now) { continue; } // skip dates in the future
-
+			$dayOfDate = date('d/m/Y', $date);
+            if ($dayOfDate >= $today) { continue; } // skip dates in the future
             $cerr = new ConsistencyError2(0, $userid, NULL, $date, T_("not defined."));
             $cerr->severity = ConsistencyError2::severity_error;
             $cerrList[] = $cerr;
